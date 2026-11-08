@@ -3,12 +3,15 @@ main: de.jeter.chatex.ChatEx
 version: ${project.version}
 authors: [ Jeter, Wizard_x ]
 description: Chat management plugin
-softdepend: [ LuckPerms, Vault, PlaceholderAPI, Essentials ]
+softdepend: [ voicechat, LuckPerms, Vault, PlaceholderAPI, PrefiX, Essentials ]
 api-version: 1.18
 
 commands:
   chatex:
     description: ChatEx Plugin commands
+  gc:
+    description: Sends a message to the current Simple Voice Chat group
+    usage: /gc <message>
 
 permissions:
   chatex.allowchat:
@@ -17,6 +20,9 @@ permissions:
   chatex.chat.global:
     description: Is needed to use the global chat (if ranged mode is enabled) or Cross server chat
     default: false
+  chatex.groupchat.use:
+    description: Allows sending messages to the current Simple Voice Chat group
+    default: true
   chatex.chat.color:
     description: Is needed to use color codes with & in chat
     default: false

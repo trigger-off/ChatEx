@@ -39,12 +39,15 @@ public class ChatListener implements Listener {
 
     private final AdManager adManager = Config.ADS_SMART_MANAGER.getBoolean() ? new SmartAdManager() : new SimpleAdManager();
     private EventPriority registeredPriority;
+    private volatile boolean groupChatEnabled;
+    private volatile String groupChatTrigger;
 
     /**
      * Registers this listener for {@link AsyncPlayerChatEvent} at the priority configured
      * in {@link Config#PRIORITY}, instead of relying on one fixed {@code @EventHandler} per priority.
      */
     public void register(Plugin plugin) {
+        refreshGroupChatSettings();
         registeredPriority = resolvePriority();
         Bukkit.getPluginManager().registerEvent(
                 AsyncPlayerChatEvent.class,
@@ -59,6 +62,7 @@ public class ChatListener implements Listener {
      * Re-registers this listener if the configured {@link Config#PRIORITY} changed, e.g. after {@code /chatex reload}.
      */
     public void reregister(Plugin plugin) {
+        refreshGroupChatSettings();
         if (resolvePriority() == registeredPriority) {
             return;
         }
@@ -84,6 +88,18 @@ public class ChatListener implements Listener {
     private void executeChatEvent(AsyncPlayerChatEvent event) {
         LogHelper.debug("ChatEvent fired with priority: " + Config.PRIORITY.getString().toUpperCase() + ", ChatEx reacting to it...");
         Player player = event.getPlayer();
+        String chatMessage = event.getMessage();
+        String trigger = groupChatTrigger;
+
+        if (groupChatEnabled && trigger != null && !trigger.isEmpty() && chatMessage.startsWith(trigger)) {
+            event.setCancelled(true);
+            String groupMessage = chatMessage.substring(trigger.length());
+            Bukkit.getScheduler().runTask(
+                    ChatEx.getInstance(),
+                    () -> ChatEx.getInstance().sendGroupMessage(player, groupMessage)
+            );
+            return;
+        }
 
         if (!hasChatPermission(event, player)) {
             return;
@@ -91,8 +107,6 @@ public class ChatListener implements Listener {
 
         String format = PluginManager.getMessageFormat(player);
         logFormatDebug(player, format);
-
-        String chatMessage = event.getMessage();
 
         // Every apply*-step below returns null if it already cancelled/handled the event itself.
         chatMessage = applyAntiSpam(event, player, chatMessage);
@@ -117,6 +131,17 @@ public class ChatListener implements Listener {
 
         forwardCrossServerMessage(player, routing);
         finalizeMessage(event, player, routing);
+    }
+
+    private void refreshGroupChatSettings() {
+        groupChatEnabled = Config.GROUP_CHAT_ENABLED.getBoolean();
+        String trigger = Config.GROUP_CHAT_TRIGGER.getString();
+        if (trigger == null || trigger.codePointCount(0, trigger.length()) != 1) {
+            ChatEx.getInstance().getLogger().warning("group-chat.trigger must contain exactly one character; the chat trigger is disabled.");
+            groupChatTrigger = "";
+            return;
+        }
+        groupChatTrigger = trigger;
     }
 
     private boolean hasChatPermission(AsyncPlayerChatEvent event, Player player) {

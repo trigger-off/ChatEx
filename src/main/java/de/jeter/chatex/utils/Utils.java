@@ -21,17 +21,20 @@ package de.jeter.chatex.utils;
 import de.jeter.chatex.ChatEx;
 import de.jeter.chatex.plugins.PluginManager;
 import me.clip.placeholderapi.PlaceholderAPI;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Utils {
 
     private static final Pattern COLOR_CODE_PATTERN = Pattern.compile("(?i)&[0-9a-fk-or]|#[0-9a-f]{6}");
+    private static final Pattern PREFIX_PLACEHOLDER_PATTERN = Pattern.compile("%prefix_(?:prefix|namecolor)%");
 
     public static String translateColorCodes(String string, Player p) {
         if (p.hasPermission("chatex.chat.color")) {
@@ -58,6 +61,19 @@ public class Utils {
 
         double squaredDistance = Math.pow(Config.RANGE.getInt(), 2);
         for (Player recipient : sender.getWorld().getPlayers()) {
+            // Игнорируем игроков в режиме наблюдателя
+            if (recipient.getGameMode() == org.bukkit.GameMode.SPECTATOR) {
+                continue;
+            }
+
+            // Игнорируем игроков в ванише (EssentialsX)
+            if (HookManager.checkEssentials()) {
+                com.earth2me.essentials.Essentials essentials = (com.earth2me.essentials.Essentials) Bukkit.getServer().getPluginManager().getPlugin("Essentials");
+                com.earth2me.essentials.User user = essentials.getUser(recipient);
+                if (user != null && user.isVanished()) {
+                    continue;
+                }
+            }
             if (Config.RANGE.getInt() > 0 && (playerLocation.distanceSquared(recipient.getLocation()) > squaredDistance)) {
                 continue;
             }
@@ -68,17 +84,39 @@ public class Utils {
     }
 
     public static String replacePlayerPlaceholders(Player player, String format) {
+        return replacePlayerPlaceholders(player, format, player == null ? "%player" : player.getName());
+    }
+
+    public static String replacePlayerPlaceholders(Player player, String format, String playerPlaceholder) {
         if (player == null) {
             return format;
         }
         String result = format;
 
+        List<String> protectedPlaceholders = new ArrayList<>();
+        String placeholderMarker = "CHATEX_PREFIX_PLACEHOLDER_" + player.getUniqueId() + "_";
+        Matcher prefixPlaceholderMatcher = PREFIX_PLACEHOLDER_PATTERN.matcher(result);
+        StringBuffer protectedFormat = new StringBuffer();
+        while (prefixPlaceholderMatcher.find()) {
+            protectedPlaceholders.add(prefixPlaceholderMatcher.group());
+            prefixPlaceholderMatcher.appendReplacement(
+                    protectedFormat,
+                    Matcher.quoteReplacement(placeholderMarker + (protectedPlaceholders.size() - 1))
+            );
+        }
+        prefixPlaceholderMatcher.appendTail(protectedFormat);
+        result = protectedFormat.toString();
+
         result = result.replace("%displayname", player.getDisplayName());
         result = result.replace("%prefix", PluginManager.getPrefix(player));
         result = result.replace("%suffix", PluginManager.getSuffix(player));
-        result = result.replace("%player", player.getName());
+        result = result.replace("%player", playerPlaceholder);
         result = result.replace("%world", player.getWorld().getName());
         result = result.replace("%group", PluginManager.getGroupNames(player).length > 0 ? PluginManager.getGroupNames(player)[0] : "none");
+
+        for (int i = 0; i < protectedPlaceholders.size(); i++) {
+            result = result.replace(placeholderMarker + i, protectedPlaceholders.get(i));
+        }
 
         if (HookManager.checkPlaceholderAPI()) {
             LogHelper.debug("PlaceholderAPI is installed! Replacing...");
