@@ -40,7 +40,7 @@ public enum Config {
     GLOBALFORMAT("global-message-format", "&9[%world] %prefix%displayname%suffix: &e%message", "The message-format if ranged-mode is enabled."),
     GROUP_CHAT_ENABLED("group-chat.enabled", true, "Should the Simple Voice Chat group chat be enabled?"),
     GROUP_CHAT_TRIGGER("group-chat.trigger", "#", "The prefix used to send a message to the Simple Voice Chat group chat."),
-    GROUP_CHAT_FORMAT("group-chat.format", "&6[ГР] %prefix_prefix% %prefix_namecolor%%player%&r: &f%message", "The Simple Voice Chat group-chat format."),
+    GROUP_CHAT_FORMAT("group-chat.format", "&6[ГР] %prefix_prefix% %player&r: &f%message", "The Simple Voice Chat group-chat format."),
     GROUP_CHAT_NOT_IN_GROUP("group-chat.messages.not-in-group", "&cТы не состоишь в группе Simple Voice Chat.", "Message shown when a player is not in an SVC group."),
     GROUP_CHAT_UNAVAILABLE("group-chat.messages.voicechat-unavailable", "&cSimple Voice Chat недоступен.", "Message shown when the SVC API is unavailable."),
     GROUP_CHAT_NO_PERMISSION("group-chat.messages.no-permission", "&cУ тебя нет разрешения на использование группового чата.", "Message shown when a player cannot use group chat."),

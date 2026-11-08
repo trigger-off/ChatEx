@@ -61,6 +61,7 @@ public class ChatEx extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(this, this);
         getCommand("chatex").setExecutor(new CommandHandler());
         getCommand("gc").setExecutor(new GroupChatCommand(this));
+        getCommand("gc").setTabCompleter(new GroupChatCommand.TabCompleterImpl());
         initializeGroupChatIntegration();
 
         if (Config.CHECK_UPDATE.getBoolean()) {

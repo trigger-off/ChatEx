@@ -21,23 +21,49 @@ package de.jeter.chatex;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
+
+import java.util.Collections;
+import java.util.List;
 
 public class GroupChatCommand implements CommandExecutor {
 
     private final ChatEx chatEx;
-
+    static class TabCompleterImpl implements TabCompleter {
+        @Override
+        public List<String> onTabComplete(
+                CommandSender sender,
+                Command command,
+                String alias,
+                String[] args
+        ) {
+            return Collections.emptyList();
+        }
+    }
     public GroupChatCommand(ChatEx chatEx) {
         this.chatEx = chatEx;
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(
+            CommandSender sender,
+            Command command,
+            String label,
+            String[] args
+    ) {
         if (!(sender instanceof Player)) {
             sender.sendMessage("Only players can use this command.");
             return true;
         }
-        chatEx.sendGroupMessage((Player) sender, String.join(" ", args));
+
+        chatEx.sendGroupMessage(
+                (Player) sender,
+                String.join(" ", args)
+        );
+
         return true;
     }
+
+
 }
